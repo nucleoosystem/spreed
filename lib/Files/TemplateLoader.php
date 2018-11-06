@@ -69,6 +69,7 @@ class TemplateLoader {
 		Util::addScript('spreed', 'models/localstoragemodel');
 		Util::addScript('spreed', 'models/room');
 		Util::addScript('spreed', 'models/roomcollection');
+		Util::addScript('spreed', 'views/callbutton');
 		Util::addScript('spreed', 'views/chatview');
 		Util::addScript('spreed', 'views/editabletextlabel');
 		Util::addScript('spreed', 'views/richobjectstringparser');
