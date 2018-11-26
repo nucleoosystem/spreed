@@ -108,16 +108,7 @@
 
 			this.model = fileInfo;
 
-			// Discard the call button until joining to the new room.
-			delete this._callButton;
-
 			this.render();
-
-			if (OCA.Talk.FilesPlugin.isTalkSidebarSupportedForFile(this.model)) {
-				this._roomForFileModel.join(this.model.get('id'));
-			} else {
-				this._roomForFileModel.leave();
-			}
 		},
 
 		setActiveRoom: function(activeRoom) {
@@ -128,21 +119,10 @@
 			this._activeRoom = activeRoom;
 
 			if (activeRoom) {
-				this._callButton = new OCA.SpreedMe.Views.CallButton({
-					model: activeRoom,
-					connection: OCA.SpreedMe.app.connection,
-				});
-				// Force initial rendering; changes in the room state will
-				// automatically render the button again from now on.
-				this._callButton.render();
-
 				// TODO unify this somehow
 				this.listenTo(activeRoom, 'change:participantFlags', this._updateCallContainer);
 // 				this.listenTo(OCA.SpreedMe.app.signaling, 'leaveCall', this._hideCallUi);
 				OCA.SpreedMe.app.signaling.on('leaveCall', this._boundHideCallUi);
-			} else {
-				// TODO needed here? Or is it enough deleting it in setFileInfo?
-				delete this._callButton;
 			}
 
 			this.render();
@@ -154,7 +134,7 @@
 			this._$talkSidebar = null;
 			this._callUiShown = false;
 
-			if (!OCA.Talk.FilesPlugin.isTalkSidebarSupportedForFile(this.model) || !this._callButton) {
+			if (!OCA.Talk.FilesPlugin.isTalkSidebarSupportedForFile(this.model)) {
 				return;
 			}
 
@@ -193,8 +173,6 @@
 				'</div>');
 
 			OCA.SpreedMe.app.registerLocalVideoButtonHandlers();
-
-			this.$el.append(this._callButton.$el);
 		},
 
 		_updateCallContainer: function() {
@@ -279,6 +257,8 @@
 
 		initialize: function(options) {
 			this._roomForFileModel = options.roomForFileModel;
+
+			this.listenTo(roomsChannel, 'joinedRoom', this.setActiveRoom);
 		},
 
 		/**
@@ -352,6 +332,12 @@
 				return;
 			}
 
+			// Discard the call button until joining to the new room.
+			if (this._callButton) {
+				this._callButton.$el.remove();
+				delete this._callButton;
+			}
+
 			this.model = fileInfo;
 
 			if (!fileInfo || fileInfo.get('id') === undefined) {
@@ -405,6 +391,23 @@
 			OCA.SpreedMe.app._chatView.focusChatInput();
 		},
 
+		setActiveRoom: function(activeRoom) {
+			if (!activeRoom) {
+				// TODO needed here? Or is it enough deleting it in setFileInfo?
+				delete this._callButton;
+
+				return;
+			}
+
+			this._callButton = new OCA.SpreedMe.Views.CallButton({
+				model: activeRoom,
+				connection: OCA.SpreedMe.app.connection,
+			});
+			// Force initial rendering; changes in the room state will
+			// automatically render the button again from now on.
+			this._callButton.render();
+			this._callButton.$el.prependTo(this.$el);
+		},
 	});
 
 	/**
