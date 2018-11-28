@@ -4910,6 +4910,7 @@
 							'a=' + event.candidate.candidate + '\r\n';
 					}
 					self.localDescription.sdp = sections.join('');
+					self.localDescription.sdp = SDPUtils.prioritizeH264(self.localDescription.sdp);
 					self.dispatchEvent(event);
 					if (self.onicecandidate !== null) {
 						self.onicecandidate(event);
@@ -5626,6 +5627,7 @@
 				}
 
 				var sdp = SDPUtils.writeSessionBoilerplate();
+
 				var transceivers = [];
 				tracks.forEach(function(mline, sdpMLineIndex) {
 					// For each track, create an ice gatherer, ice transport,
@@ -5682,6 +5684,7 @@
 				});
 
 				this._pendingOffer = transceivers;
+				sdp = SDPUtils.prioritizeH264(sdp);
 				var desc = new RTCSessionDescription({
 					type: 'offer',
 					sdp: sdp
@@ -5711,6 +5714,7 @@
 						'answer', self.localStreams[0]);
 				});
 
+				sdp = SDPUtils.prioritizeH264(sdp);
 				var desc = new RTCSessionDescription({
 					type: 'answer',
 					sdp: sdp
@@ -9744,7 +9748,7 @@
 	 *
 	 * @param {Object} obj
 	 * @return {Number}
-	 * @api public
+	 * @api public 
 	 */
 
 	exports.length = function(obj){
@@ -12355,6 +12359,36 @@
 		}
 		return 'sendrecv';
 	};
+
+    SDPUtils.prioritizeH264 = function(sdp) {
+        var h264 = findH264Id(sdp);
+        if (h264 !== null) {
+            var m = sdp.match(/m=video\s(\d+)\s[A-Z\/]+\s([0-9\ ]+)/);
+            if (m.length == 3) {
+                var candidates = m[2].split(" ");
+                var prioritized = [];
+                Object.keys(candidates).forEach(function (id) {
+                    if (candidates[id] == h264) {
+                        prioritized.unshift(candidates[id]);
+                    } else {
+                        prioritized.push(candidates[id]);
+                    }
+                });
+                var mPrioritized = m[0].replace(m[2], prioritized.join(" "));
+                sdp = sdp.replace(m[0], mPrioritized);
+            }
+        }
+        return sdp;
+    }
+
+    SDPUtils.findH264Id = function(sdp) {
+            var m = sdp.match(/a=rtpmap\:(\d+)\sH264\/\d+/);
+            if (m.length > 0) {
+                return m[1];
+            }
+        return null;
+    }
+};
 
 // Expose public methods.
 	module.exports = SDPUtils;
@@ -16748,6 +16782,8 @@
 				});
 
 				this._pendingOffer = transceivers;
+
+				sdp = SDPUtils.prioritizeH264(sdp);
 				var desc = new RTCSessionDescription({
 					type: 'offer',
 					sdp: sdp
@@ -16783,6 +16819,7 @@
 						'answer', self.localStreams[0]);
 				});
 
+				sdp = SDPUtils.prioritizeH264(sdp);
 				var desc = new RTCSessionDescription({
 					type: 'answer',
 					sdp: sdp
