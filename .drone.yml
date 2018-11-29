@@ -161,6 +161,9 @@ pipeline:
         TESTS: jsunit
   acceptance-call:
     image: nextcloudci/acceptance-php7.1:acceptance-php7.1-2
+    environment:
+      - APP_NAME=spreed
+      - CORE_BRANCH=stable15
     commands:
       # Pre-setup steps
       - git clone --depth 1 -b master https://github.com/nextcloud/server ../server
